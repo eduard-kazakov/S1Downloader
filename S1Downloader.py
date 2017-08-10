@@ -8,6 +8,7 @@ Created on Wed Aug  9 12:49:33 2017
 #import urllib2, urllib
 import os
 from datetime import datetime
+from datetime import timedelta
 import xml.etree.ElementTree as etree
 import ogr
 import requests
@@ -180,13 +181,16 @@ class S1Downloader():
         
         current_size = 0
         chunk_size = 4096
+        start_time = datetime.now()
         with open(downloading_path, 'wb') as fd:
             for chunk in r.iter_content(chunk_size=chunk_size):
                 sys.stdout.write('Megabytes downloaded: %s\r' % str(current_size/1024/1024.0))
                 sys.stdout.flush()
                 fd.write(chunk)
                 current_size += chunk_size
+        end_time = datetime.now()
         print ''
+        print '%s seconds' % (end_time-start_time).total_seconds()
         
     def __datetime_to_scihub_format(self, user_datetime):
         return user_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
