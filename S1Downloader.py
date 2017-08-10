@@ -108,6 +108,7 @@ class S1Downloader():
         if number_of_results <= rows:
             answer_data = etree.ElementTree(etree.fromstring(datasource.content)).getroot()
             entries = answer_data.findall('{http://www.w3.org/2005/Atom}entry')
+            
             for entry in entries:
                 entry_properties = self.__get_entry_properties(entry) 
                 searched_data.append(entry_properties)
@@ -121,7 +122,6 @@ class S1Downloader():
                 for entry in entries:
                     entry_properties = self.__get_entry_properties(entry) 
                     searched_data.append(entry_properties)
-                
         return searched_data
         
     def download_by_conditions (self, wkt_region=None, ogr_source=None, start_date=None, end_date=None, sensor_modes=None, polarisations=None, product_types=None, extra=None, skip_rate=1):
@@ -212,12 +212,20 @@ class S1Downloader():
                 end_date = child.text
             if child.get('name') == 'size':
                 size = child.text
+            
             if child.get('name') == 'uuid':
                 uuid = child.text
+            
             if child.get('name') == 'identifier':
                 name = child.text
             if child.get('name') == 'format':
                 data_format = child.text
+
+        if not uuid:
+            uuid = entry.find('{http://www.w3.org/2005/Atom}id').text
+        if not name:
+            name = entry.find('{http://www.w3.org/2005/Atom}title').text
+
         return {'product_type':product_type, 'polarisation':polarisation, 'start_date':start_date,
                 'end_date':end_date, 'size':size, 'uid':uuid, 'name':name, 'data_format':data_format}
         
