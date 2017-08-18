@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug  9 12:49:33 2017
@@ -173,7 +174,66 @@ class S1Downloader():
                     current_size += chunk_size
                     
             print "Done downloading"
+    
+    def download_by_simple_file_text_list_with_names(self,text_list):
+        list_of_names = open(text_list,'r').readlines()
+        list_of_scenes = []
+        for name in list_of_names:
+            list_of_scenes.append(name.split('.')[0])
+        conditions = ' OR '.join(list_of_scenes)
+        rows = 100
         
+        searched_data = []        
+        
+        if len(list_of_names) <= rows:
+            datasource = requests.get(self.opensearch_base_url,params={'q': conditions, 'rows':str(rows), 'orderby':'beginposition asc'}, auth=HTTPBasicAuth(self.username,self.password))
+            answer_data = etree.ElementTree(etree.fromstring(datasource.content)).getroot()
+            entries = answer_data.findall('{http://www.w3.org/2005/Atom}entry')    
+            for entry in entries:
+                entry_properties = self.__get_entry_properties(entry) 
+                searched_data.append(entry_properties)
+        else:
+            for start_row in range(0,len(list_of_names),rows):
+                print 'requesting results from %s to %s' % (str(start_row),str(start_row+int(rows)))
+                datasource = requests.get(self.opensearch_base_url,params={'q': conditions, 'start':str(start_row), 'rows':str(rows), 'orderby':'beginposition asc'}, auth=HTTPBasicAuth(self.username,self.password))
+                answer_data = etree.ElementTree(etree.fromstring(datasource.content)).getroot()
+                entries = answer_data.findall('{http://www.w3.org/2005/Atom}entry')
+                for entry in entries:
+                    entry_properties = self.__get_entry_properties(entry) 
+                    searched_data.append(entry_properties)
+        
+        #print searched_data        
+        
+        for search_result in searched_data:
+            print 'Downloading %s (size:%s)' % (search_result['name'], search_result['size'])
+            current_path = self.download_dir + search_result['name'] + '.' + search_result['data_format']+ '.' + 'zip'
+            if os.path.exists(current_path):
+                print 'Dataset already exists'
+                continue
+            
+            self.download_scene_by_id (search_result['uid'], current_path)
+            print 'Done'
+            
+    def download_scene_by_name (self, name):
+        conditions = name.split('.')[0]
+        datasource = requests.get(self.opensearch_base_url,params={'q': conditions}, auth=HTTPBasicAuth(self.username,self.password))
+        answer_data = etree.ElementTree(etree.fromstring(datasource.content)).getroot()
+                
+        entries = answer_data.findall('{http://www.w3.org/2005/Atom}entry')
+        searched_data=[]
+                
+        for entry in entries:
+            entry_properties = self.__get_entry_properties(entry) 
+            searched_data.append(entry_properties)
+        for search_result in searched_data:
+            print 'Downloading %s (size:%s)' % (search_result['name'], search_result['size'])
+            current_path = self.download_dir + search_result['name'] + '.' + search_result['data_format']+ '.' + 'zip'
+            if os.path.exists(current_path):
+                print 'Dataset already exists'
+                continue
+            
+            self.download_scene_by_id (search_result['uid'], current_path)
+            print 'Done'         
         
     def download_scene_by_id (self, uid, downloading_path):
         downloader_string = self.odata_base_url + 'Products(\'%s\')/$value' % str(uid)
