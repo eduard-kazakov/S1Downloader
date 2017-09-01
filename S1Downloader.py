@@ -179,7 +179,7 @@ class S1Downloader():
         list_of_names = open(text_list,'r').readlines()
         list_of_scenes = []
         for name in list_of_names:
-            list_of_scenes.append(name.split('.')[0].replace('\n','').replace('\r','')
+            list_of_scenes.append(name.split('.')[0].replace('\n','').replace('\r',''))
         conditions = ' OR '.join(list_of_scenes)
         rows = 100
         
